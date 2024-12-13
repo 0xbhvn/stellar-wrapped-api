@@ -24,6 +24,7 @@ const envVarsSchema = Joi.object()
     SMTP_PASSWORD: Joi.string().description('password for email server'),
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
     RESEND_API_KEY: Joi.string().description('API key for the Resend service'),
+    BIGQUERY_PROJECT_ID: Joi.string().description('Google Cloud project ID'),
   })
   .unknown();
 
@@ -51,14 +52,9 @@ module.exports = {
     resend: {
       apiKey: envVars.RESEND_API_KEY,
     },
-    smtp: {
-      host: envVars.SMTP_HOST,
-      port: envVars.SMTP_PORT,
-      auth: {
-        user: envVars.SMTP_USERNAME,
-        pass: envVars.SMTP_PASSWORD,
-      },
-    },
     from: envVars.EMAIL_FROM,
+  },
+  bigquery: {
+    projectId: envVars.BIGQUERY_PROJECT_ID,
   },
 };

@@ -49,6 +49,7 @@
     "prettier"
   ],
   "dependencies": {
+    "@google-cloud/bigquery": "^7.9.1",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
