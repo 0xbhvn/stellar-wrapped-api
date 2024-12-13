@@ -23,6 +23,7 @@ const envVarsSchema = Joi.object()
     SMTP_USERNAME: Joi.string().description('username for email server'),
     SMTP_PASSWORD: Joi.string().description('password for email server'),
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
+    RESEND_API_KEY: Joi.string().description('API key for the Resend service'),
   })
   .unknown();
 
@@ -47,6 +48,9 @@ module.exports = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
+    resend: {
+      apiKey: envVars.RESEND_API_KEY,
+    },
     smtp: {
       host: envVars.SMTP_HOST,
       port: envVars.SMTP_PORT,

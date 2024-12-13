@@ -1,14 +1,11 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const config = require('../config/config');
 const logger = require('../config/logger');
 
-const transport = nodemailer.createTransport(config.email.smtp);
-/* istanbul ignore next */
+const resend = new Resend(config.email.resend.apiKey);
+// /* istanbul ignore next */
 if (config.env !== 'test') {
-  transport
-    .verify()
-    .then(() => logger.info('Connected to email server'))
-    .catch(() => logger.warn('Unable to connect to email server. Make sure you have configured the SMTP options in .env'));
+  logger.info('Resend instance initialized');
 }
 
 /**
@@ -19,11 +16,11 @@ if (config.env !== 'test') {
  * @returns {Promise}
  */
 const sendEmail = async (to, subject, text) => {
-  const msg = { from: config.email.from, to, subject, text };
-  await transport.sendMail(msg);
+  const msg = { from: config.email.from, to, subject, html: `<p>${text}</p>` };
+  await resend.emails.send(msg);
 };
 
-/**g
+/**
  * Send reset password email
  * @param {string} to
  * @param {string} token
@@ -48,15 +45,14 @@ If you did not request any password resets, then ignore this email.`;
 const sendVerificationEmail = async (to, token) => {
   const subject = 'Email Verification';
   // replace this url with the link to the email verification page of your front-end app
-  const verificationEmailUrl = `http://link-to-app/verify-email?token=${token}`;
+  const verificationUrl = `http://link-to-app/verify-email?token=${token}`;
   const text = `Dear user,
-To verify your email, click on this link: ${verificationEmailUrl}
+To verify your email, click on this link: ${verificationUrl}
 If you did not create an account, then ignore this email.`;
   await sendEmail(to, subject, text);
 };
 
 module.exports = {
-  transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
