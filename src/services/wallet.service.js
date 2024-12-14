@@ -1,5 +1,5 @@
 const httpStatus = require('http-status');
-const { User } = require('../models');
+const { User, WalletSummary } = require('../models');
 const ApiError = require('../utils/ApiError');
 const bigquery = require('../config/bigquery');
 
@@ -9,6 +9,49 @@ const bigquery = require('../config/bigquery');
  * @returns {Promise<object>}
  */
 const getAccountActivitySummary = async (address) => {
+  // Check if the summary exists in MongoDB
+  let summary = await findWalletSummary(address);
+  if (!summary) {
+    // If not found, query BigQuery and create the summary in MongoDB
+    const result = await queryBigQueryForSummary(address);
+    summary = await createWalletSummary(result);
+  }
+  return summary;
+};
+
+/**
+ * Find wallet summary in MongoDB
+ * @param {string} address
+ * @returns {Promise<object>}
+ */
+const findWalletSummary = async (address) => {
+  const summary = await WalletSummary.findOne({ account: address }).lean();
+  if (summary) {
+    delete summary._id;
+    delete summary.__v;
+  }
+  return summary;
+};
+
+/**
+ * Create wallet summary in MongoDB
+ * @param {object} summaryData
+ * @returns {Promise<object>}
+ */
+const createWalletSummary = async (summaryData) => {
+  const summary = await WalletSummary.create(summaryData);
+  const plainSummary = summary.toObject();
+  delete plainSummary._id;
+  delete plainSummary.__v;
+  return plainSummary;
+};
+
+/**
+ * Query BigQuery for wallet summary
+ * @param {string} address
+ * @returns {Promise<object>}
+ */
+const queryBigQueryForSummary = async (address) => {
   const query = `
     SELECT
       account,
