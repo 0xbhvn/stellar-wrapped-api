@@ -5,7 +5,7 @@ const logger = require('../config/logger');
 const resend = new Resend(config.email.resend.apiKey);
 // /* istanbul ignore next */
 if (config.env !== 'test') {
-  logger.info('Resend instance initialized');
+  logger.info('Email service initialized');
 }
 
 /**

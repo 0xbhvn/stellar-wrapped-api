@@ -70,17 +70,27 @@ const queryBigQueryForSummary = async (address) => {
     params: { account: address },
   };
 
-  const [job] = await bigquery.createQueryJob(options);
-  const [rows] = await job.getQueryResults();
+  try {
+    const [job] = await bigquery.createQueryJob(options);
+    const [rows] = await job.getQueryResults();
 
-  if (rows.length === 0) {
-    throw new Error('No data found for the given account');
+    if (rows.length === 0) {
+      console.error('BigQuery returned no rows for account:', address);
+      throw new Error('No data found for the given account');
+    }
+
+    const result = rows[0];
+    result.most_active_day = result.most_active_day.value; // Ensure most_active_day is a string
+
+    return result;
+  } catch (err) {
+    console.error('BigQuery Query Error:', err.message, {
+      address,
+      query,
+      options,
+    });
+    throw new Error('Query timed out or failed to execute');
   }
-
-  const result = rows[0];
-  result.most_active_day = result.most_active_day.value; // Ensure most_active_day is a string
-
-  return result;
 };
 
 module.exports = {
