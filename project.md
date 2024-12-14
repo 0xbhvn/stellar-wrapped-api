@@ -20,8 +20,6 @@
 - **L (Large):** Complex analytics with multi-dimensional data processing.
 - **XL (Extra Large):** Involves extensive computation, external data dependencies, or deep integrations.
 
-This ordering will help in prioritizing tasks for development. Let me know if further adjustments are needed!
-
 ### **Additional Notes:**
 
 1. **Database for Cache**: Use the database as a cache for storing computed analytics (e.g., once a user’s analytics are computed, persist results for faster future queries).
