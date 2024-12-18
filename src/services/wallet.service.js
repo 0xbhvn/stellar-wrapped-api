@@ -56,13 +56,29 @@ const queryBigQueryForSummary = async (address) => {
     SELECT
       account,
       total_transactions,
-      most_active_day,
-      most_active_day_count
+      ROUND(net_sent, 2) AS total_sent_amount, -- Round to 2 decimal places
+      ROUND(net_received, 2) AS total_received_amount, -- Round to 2 decimal places
+      unique_wallet_transfers,
+      FORMAT_DATE('%Y-%m-%d', most_active_day) AS most_active_day,
+      highest_daily_transaction_count AS most_active_day_count,
+      most_active_month,
+      highest_monthly_transaction_count AS monthly_transaction_count,
+      top_interaction_wallet,
+      total_interaction_count,
+      top_5_transactions_by_category,
+      ROUND(total_selling_amount_in_xlm, 2) AS total_selling_amount, -- Round to 2 decimal places
+      ROUND(total_buying_amount_in_xlm, 2) AS total_buying_amount, -- Round to 2 decimal places
+      ROUND(net_pnl_in_xlm, 2) AS net_pnl, -- Round to 2 decimal places
+      ROUND(token_balance, 2) AS token_balance, -- Round to 2 decimal places
+      FORMAT_DATE('%Y-%m-%d', first_transaction_date) AS first_transaction_date,
+      FORMAT_DATE('%Y-%m-%d', last_transaction_date) AS last_transaction_date,
+      time_on_chain_days
     FROM
-      \`blip-444620.stellar_wrapped.account_activity_summary\`
+      \`blip-444620.stellar_wrapped.annual_account_summary_2024\`
     WHERE
       account = @account
   `;
+
 
   const options = {
     query: query,
@@ -79,10 +95,7 @@ const queryBigQueryForSummary = async (address) => {
       throw new Error('No data found for the given account');
     }
 
-    const result = rows[0];
-    result.most_active_day = result.most_active_day.value; // Ensure most_active_day is a string
-
-    return result;
+    return rows[0]; // Return the first row as the result
   } catch (err) {
     console.error('BigQuery Query Error:', err.message, {
       address,
@@ -92,6 +105,7 @@ const queryBigQueryForSummary = async (address) => {
     throw new Error('Query timed out or failed to execute');
   }
 };
+
 
 module.exports = {
   getAccountActivitySummary,
