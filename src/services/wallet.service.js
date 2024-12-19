@@ -11,11 +11,25 @@ const bigquery = require('../config/bigquery');
 const getAccountActivitySummary = async (address) => {
   // Check if the summary exists in MongoDB
   let summary = await findWalletSummary(address);
-  if (!summary) {
-    // If not found, query BigQuery and create the summary in MongoDB
-    const result = await queryBigQueryForSummary(address);
-    summary = await createWalletSummary(result);
+  if (summary) {
+    if (summary.isMissing) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Wallet not found in the system');
+    }
+    return summary;
   }
+
+  // If not found, query BigQuery
+  try {
+    const result = await queryBigQueryForSummary(address);
+    summary = await createWalletSummary(result); // Create summary in MongoDB
+  } catch (err) {
+    if (err.statusCode === httpStatus.NOT_FOUND) {
+      // Log the missing wallet in MongoDB
+      await createMissingWalletSummary(address);
+    }
+    throw err; // Re-throw the error for proper handling
+  }
+
   return summary;
 };
 
@@ -44,6 +58,19 @@ const createWalletSummary = async (summaryData) => {
   delete plainSummary._id;
   delete plainSummary.__v;
   return plainSummary;
+};
+
+/**
+ * Create a missing wallet entry in MongoDB
+ * @param {string} address
+ * @returns {Promise<void>}
+ */
+const createMissingWalletSummary = async (address) => {
+  const missingWallet = {
+    account: address,
+    isMissing: true,
+  };
+  await WalletSummary.create(missingWallet);
 };
 
 /**
@@ -79,7 +106,6 @@ const queryBigQueryForSummary = async (address) => {
       account = @account
   `;
 
-
   const options = {
     query: query,
     location: 'US',
@@ -90,22 +116,30 @@ const queryBigQueryForSummary = async (address) => {
     const [job] = await bigquery.createQueryJob(options);
     const [rows] = await job.getQueryResults();
 
-    if (rows.length === 0) {
-      console.error('BigQuery returned no rows for account:', address);
-      throw new Error('No data found for the given account');
+    if (!rows || rows.length === 0) {
+      console.warn(`BigQuery returned no rows for account: ${address}`);
+      throw new ApiError(httpStatus.NOT_FOUND, 'Wallet not found in the system');
     }
 
-    return rows[0]; // Return the first row as the result
+    return rows[0];
   } catch (err) {
+    if (err.message.includes('Query timed out')) {
+      throw new ApiError(
+        httpStatus.REQUEST_TIMEOUT,
+        'The request timed out. Please try again later.'
+      );
+    }
     console.error('BigQuery Query Error:', err.message, {
       address,
       query,
       options,
     });
-    throw new Error('Query timed out or failed to execute');
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'An error occurred while processing your request.'
+    );
   }
 };
-
 
 module.exports = {
   getAccountActivitySummary,
