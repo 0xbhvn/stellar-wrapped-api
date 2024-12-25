@@ -79,47 +79,55 @@ const createMissingWalletSummary = async (address) => {
  * @returns {Promise<object>}
  */
 const queryBigQueryForSummary = async (address) => {
+  // Note: adjust columns to match your final table's actual schema names
   const query = `
   SELECT
     account,
-    total_xlm_transactions AS total_transactions,
-    ROUND(net_sent, 2)      AS total_sent_amount,        -- Round to 2 decimal places
-    ROUND(net_received, 2)  AS total_received_amount,    -- Round to 2 decimal places
+
+    total_xlm_transactions   AS total_transactions,
+
+    ROUND(net_sent, 2)       AS total_sent_amount,
+    ROUND(net_received, 2)   AS total_received_amount,
+
     unique_wallet_transfers,
 
-    FORMAT_DATE('%Y-%m-%d', most_active_day)        AS most_active_day,
-    highest_daily_transaction_count                 AS most_active_day_count,
+    FORMAT_DATE('%Y-%m-%d', most_active_day) AS most_active_day,
+    highest_daily_transaction_count          AS most_active_day_count,
     most_active_month,
-    highest_monthly_transaction_count              AS monthly_transaction_count,
+    highest_monthly_transaction_count        AS monthly_transaction_count,
 
     top_interaction_wallet,
     total_interaction_count,
     top_5_transactions_by_category,
 
-    -- If you do NOT have PNL columns or want to skip them, remove or comment out
-    -- ROUND(total_selling_amount_in_xlm, 2) AS total_selling_amount,
-    -- ROUND(total_buying_amount_in_xlm, 2)  AS total_buying_amount,
-    -- ROUND(net_pnl_in_xlm, 2)             AS net_pnl,
+    -- PnL columns:
+    ROUND(total_xlm_sold,   2) AS total_selling_amount,
+    ROUND(total_xlm_bought, 2) AS total_buying_amount,
+    ROUND(net_xlm_pnl,      2) AS net_pnl,
 
-    ROUND(token_balance, 2) AS token_balance,          -- Round to 2 decimals
+    -- Token ownership columns:
+    ROUND(starting_balance, 2) AS starting_balance,
+    ROUND(current_balance,  2) AS token_balance,
+    ROUND(balance_diff,     2) AS balance_diff,
 
-    -- Format the earliest and latest transaction dates
-    FORMAT_DATE('%Y-%m-%d', first_transaction_date)  AS first_transaction_date,
-    FORMAT_DATE('%Y-%m-%d', last_transaction_date)   AS last_transaction_date,
+    FORMAT_DATE('%Y-%m-%d', first_transaction_date) AS first_transaction_date,
+    FORMAT_DATE('%Y-%m-%d', last_transaction_date)  AS last_transaction_date,
     time_on_chain_days,
 
-    -- Largest XLM Transaction as JSON
+    -- Largest XLM Tx as JSON
+    -- If your final table has a “largest_xlm_transaction_details” column
+    -- (already a JSON string), you can pull it directly. Otherwise, if
+    -- it’s a struct, you can construct a JSON string. For example:
     largest_xlm_transaction_details
   FROM
-    \`blip-444620.stellar_wrapped.december_annual_account_summary_2024\`
+    \`blip-444620.stellar_wrapped.annual_account_summary_2024\`
   WHERE
     account = @account
   LIMIT 1
 `;
 
-
   const options = {
-    query: query,
+    query,
     location: 'US',
     params: { account: address },
   };

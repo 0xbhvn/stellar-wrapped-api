@@ -15,40 +15,40 @@ const walletSummarySchema = mongoose.Schema(
     },
     total_transactions: {
       type: Number,
-      required: true,
-      default: 0, // Default for missing wallets
+      // required: true,
+      default: 0,
     },
     total_sent_amount: {
       type: Number,
-      required: true,
-      default: 0, // Default for missing wallets
+      // required: true,
+      default: 0,
     },
     total_received_amount: {
       type: Number,
-      required: true,
-      default: 0, // Default for missing wallets
+      // required: true,
+      default: 0,
     },
     unique_wallet_transfers: {
       type: Number,
-      required: true,
-      default: 0, // Default for missing wallets
+      // required: true,
+      default: 0,
     },
     most_active_day: {
-      type: Date, // Store as Date
-      default: null, // Default for missing wallets
+      type: Date,
+      default: null,
     },
     most_active_day_count: {
       type: Number,
-      required: true,
-      default: 0, // Default for missing wallets
+      // required: true,
+      default: 0,
     },
     most_active_month: {
-      type: String, // e.g., '2024-12'
+      type: String, // e.g. '2024-12'
       default: 'N/A',
     },
     monthly_transaction_count: {
       type: Number,
-      required: true,
+      // required: true,
       default: 0,
     },
     top_interaction_wallet: {
@@ -57,35 +57,45 @@ const walletSummarySchema = mongoose.Schema(
     },
     total_interaction_count: {
       type: Number,
-      required: false,
       default: 0,
     },
     top_5_transactions_by_category: {
-      type: String, // store as JSON string, e.g., '["payment","path_payment_strict_send"]'
+      type: String, // store as JSON string, e.g. '["payment","path_payment_strict_send"]'
       default: '[]',
     },
-    // optional PNL columns
+    // -- PNL columns:
     total_selling_amount: {
       type: Number,
-      required: false,
       default: 0,
     },
     total_buying_amount: {
       type: Number,
-      required: false,
       default: 0,
     },
     net_pnl: {
       type: Number,
-      required: false,
       default: 0,
     },
-    // final token balance
+    // -- “Token ownership” columns, if you want them individually
     token_balance: {
       type: Number,
-      required: false,
       default: 0,
     },
+    // OR if you want “starting_balance” / “current_balance” / “balance_diff”:
+    starting_balance: {
+      type: Number,
+      default: 0,
+    },
+    // current_balance: {
+    //   type: Number,
+    //   default: 0,
+    // },
+    balance_diff: {
+      type: Number,
+      default: 0,
+    },
+
+    // -- Transaction date range columns:
     first_transaction_date: {
       type: Date,
       default: null,
@@ -96,19 +106,14 @@ const walletSummarySchema = mongoose.Schema(
     },
     time_on_chain_days: {
       type: Number,
-      required: true,
+      // required: true,
       default: 0,
     },
 
-    /**
-     * NEW: largest_xlm_transaction_details
-     * Storing as a JSON string (similar to top_5_transactions_by_category).
-     * You can parse/stringify in your controller or service.
-     */
+    // -- Largest XLM transaction details as a JSON string
     largest_xlm_transaction_details: {
       type: String,
-      required: false,
-      default: '{}', // empty object by default
+      default: '{}', // empty JSON object by default
     },
   },
   {
@@ -116,7 +121,7 @@ const walletSummarySchema = mongoose.Schema(
   }
 );
 
-// add plugin that converts mongoose to json
+// add plugin that converts mongoose documents to JSON
 walletSummarySchema.plugin(toJSON);
 
 /**
