@@ -22,7 +22,7 @@ module.exports = router;
  * /wallet/{address}/activity-summary:
  *   get:
  *     summary: Get account activity summary
- *     description: Retrieve the activity summary for a specific wallet address.
+ *     description: Retrieve the activity summary for a specific wallet address, including transaction metrics, XLM P&L, last transactions, top non-XLM assets, and more.
  *     tags: [Wallet]
  *     parameters:
  *       - in: path
@@ -30,10 +30,10 @@ module.exports = router;
  *         required: true
  *         schema:
  *           type: string
- *         description: Wallet address
+ *         description: The Stellar account ID (G...)
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Wallet summary successfully retrieved
  *         content:
  *           application/json:
  *             schema:
@@ -41,118 +41,150 @@ module.exports = router;
  *               properties:
  *                 account:
  *                   type: string
- *                   description: Wallet address
+ *                   description: The Stellar account ID
  *                 isMissing:
  *                   type: boolean
- *                   description: Indicates if the wallet is missing (not found) in the system
+ *                   description: Indicates if the wallet is missing (true) or found (false)
  *                 total_transactions:
  *                   type: integer
- *                   description: Total number of transactions that this wallet has performed
- *                 total_sent_amount:
+ *                   description: Total number of distinct transactions by this account
+ *                 total_sent_xlm:
  *                   type: number
  *                   format: double
- *                   description: Total amount sent (XLM or XLM-equivalent)
- *                 total_received_amount:
+ *                   description: Total XLM (rounded) sent by this account
+ *                 total_received_xlm:
  *                   type: number
  *                   format: double
- *                   description: Total amount received (XLM or XLM-equivalent)
- *                 unique_wallet_transfers:
+ *                   description: Total XLM (rounded) received by this account
+ *                 total_selling_xlm:
+ *                   type: number
+ *                   format: double
+ *                   description: Total XLM put up for sell offers (rounded)
+ *                 total_buying_xlm:
+ *                   type: number
+ *                   format: double
+ *                   description: Total XLM put up for buy offers (rounded)
+ *                 net_pnl_xlm:
+ *                   type: number
+ *                   format: double
+ *                   description: Net P&L (profit or loss) in XLM (rounded)
+ *                 time_on_chain_days:
  *                   type: integer
- *                   description: Number of unique wallets this wallet has interacted with
+ *                   description: The number of days since the first transaction
+ *                 first_txn_time:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Date/time (UTC) of the earliest recorded transaction
+ *                 last_txn_time:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Date/time (UTC) of the most recent recorded transaction
+ *                 last_transaction_details:
+ *                   type: string
+ *                   description: JSON string with details of the last (any) transaction. E.g. `{"id":..., "op_type_int":..., "timestamp":"...","amount":...}`
+ *                 last_nonxlm_transaction_details:
+ *                   type: string
+ *                   description: JSON string with details of the last non-XLM transaction
+ *                 last_xlm_transaction_details:
+ *                   type: string
+ *                   description: JSON string with details of the last XLM transaction
+ *                 top_largest_nonxlm:
+ *                   type: string
+ *                   description: JSON array of objects representing the largest non-XLM transaction(s)
+ *                 top_largest_xlm:
+ *                   type: string
+ *                   description: JSON array of objects representing the largest XLM transaction(s)
+ *                 top_nonxlm_sent:
+ *                   type: string
+ *                   description: JSON array of objects showing top non-XLM asset(s) by sent volume
+ *                 top_nonxlm_received:
+ *                   type: string
+ *                   description: JSON array of objects showing top non-XLM asset(s) by received volume
+ *                 top_nonxlm_selling:
+ *                   type: string
+ *                   description: JSON array of objects showing top non-XLM asset(s) by sell offers
+ *                 top_nonxlm_buying:
+ *                   type: string
+ *                   description: JSON array of objects showing top non-XLM asset(s) by buy offers
+ *                 unique_wallet_interactions:
+ *                   type: integer
+ *                   description: How many unique other wallets this account has interacted with
+ *                 top_interaction_wallet:
+ *                   type: string
+ *                   description: The wallet address with the highest number of interactions
+ *                 top_interaction_count:
+ *                   type: integer
+ *                   description: Number of interactions with the top_interaction_wallet
  *                 most_active_day:
  *                   type: string
  *                   format: date-time
- *                   description: The UTC date (YYYY-MM-DD or date-time) with the most transactions
+ *                   description: The date (UTC) with the highest transaction count
  *                 most_active_day_count:
  *                   type: integer
- *                   description: Number of transactions on the most active day
+ *                   description: Number of transactions on that most active day
  *                 most_active_month:
  *                   type: string
- *                   description: The month with the most transactions (YYYY-MM format)
- *                 monthly_transaction_count:
+ *                   description: The month with the highest transaction count (formatted as YYYY-MM)
+ *                 most_active_month_count:
  *                   type: integer
  *                   description: Number of transactions in the most active month
- *                 top_interaction_wallet:
- *                   type: string
- *                   description: Wallet address this wallet interacted with the most
- *                 total_interaction_count:
- *                   type: integer
- *                   description: Total interactions with the `top_interaction_wallet`
  *                 top_5_transactions_by_category:
  *                   type: string
- *                   description: Top 5 transaction categories (comma-separated counts)
- *                 total_selling_amount:
- *                   type: number
- *                   format: double
- *                   description: Total amount sold (in XLM equivalent)
- *                 total_buying_amount:
- *                   type: number
- *                   format: double
- *                   description: Total amount bought (in XLM equivalent)
- *                 net_pnl:
- *                   type: number
- *                   format: double
- *                   description: Net profit/loss in XLM equivalent
- *                 starting_balance:
- *                   type: number
- *                   format: double
- *                   description: Earliest recorded balance within the date range
+ *                   description: A comma-separated string of up to 5 operation types with their counts
  *                 token_balance:
  *                   type: number
  *                   format: double
- *                   description: Latest (current) recorded balance within the date range
+ *                   description: The latest XLM account balance (rounded)
+ *                 starting_balance:
+ *                   type: number
+ *                   format: double
+ *                   description: The earliest XLM account balance within the date range
  *                 balance_diff:
  *                   type: number
  *                   format: double
- *                   description: Difference between latest balance and earliest balance
- *                 first_transaction_date:
- *                   type: string
- *                   format: date-time
- *                   description: Date of the first recorded transaction (UTC)
- *                 last_transaction_date:
- *                   type: string
- *                   format: date-time
- *                   description: Date of the most recent recorded transaction (UTC)
- *                 time_on_chain_days:
- *                   type: integer
- *                   description: Number of days since first transaction (inclusive)
- *                 largest_xlm_transaction_details:
- *                   type: string
- *                   description: JSON string containing details for the largest XLM transaction
+ *                   description: The difference (latest - earliest) in XLM balance
  *                 createdAt:
  *                   type: string
  *                   format: date-time
- *                   description: Timestamp (UTC) when the summary document was created in MongoDB
+ *                   description: Timestamp (UTC) of when this record was inserted into MongoDB
  *                 updatedAt:
  *                   type: string
  *                   format: date-time
- *                   description: Timestamp (UTC) when the summary document was last updated in MongoDB
+ *                   description: Timestamp (UTC) of when this record was last updated in MongoDB
  *               example:
- *                 account: "GB3FQB7JYQ37PVYL3DE7ZWYMQCDXZFQBLA23HHJOYA3MIOHCSLT3BCYY"
+ *                 account: "GAS2EAREA5VSJ6Y4RJLV7Y2FSTXNHOC455NKNP3DM5CULXDFMB5OSGOD"
  *                 isMissing: false
- *                 total_transactions: 3750242
- *                 total_sent_amount: 178051585.23
- *                 total_received_amount: 0
- *                 unique_wallet_transfers: 1629
- *                 most_active_day: "2024-03-25T00:00:00.000Z"
- *                 most_active_day_count: 14262
- *                 most_active_month: "2024-05"
- *                 monthly_transaction_count: 390396
- *                 top_interaction_wallet: "GA75XHISXU5Q5QXTLDCORNJUTK6PEHL7KC7HWQPTRQP7I54S3H4R576U"
- *                 total_interaction_count: 8581
- *                 top_5_transactions_by_category: "manage_sell_offer: 3442085, manage_buy_offer: 3357330, payment: 803, create_account: 1"
- *                 total_selling_amount: 213485877.79
- *                 total_buying_amount: 61049734.6
- *                 net_pnl: -152436143.19
- *                 starting_balance: 511659.64
- *                 token_balance: 927058.58
- *                 balance_diff: 415398.94
- *                 first_transaction_date: "2024-01-01T00:00:00.000Z"
- *                 last_transaction_date: "2024-12-24T00:00:00.000Z"
+ *                 total_transactions: 3912
+ *                 total_sent_xlm: 226080.17
+ *                 total_received_xlm: 0
+ *                 total_selling_xlm: 0
+ *                 total_buying_xlm: 0
+ *                 net_pnl_xlm: 0
  *                 time_on_chain_days: 359
- *                 largest_xlm_transaction_details: "{\"amount\":762774.555,\"asset_code\":\"XLM\",\"operation_count\":1,\"transaction_id\":234136929508077568,\"txn_date\":\"2024-11-22\",\"type_string\":\"payment\"}"
- *                 createdAt: "2024-12-25T02:00:59.534Z"
- *                 updatedAt: "2024-12-25T02:00:59.534Z"
+ *                 first_txn_time: "2024-01-01T03:01:55.000Z"
+ *                 last_txn_time: "2024-12-24T20:08:18.000Z"
+ *                 last_transaction_details: "{\"id\":\"236110153446641664\",\"op_type_int\":1,\"op_type_str\":\"payment\",\"timestamp\":\"2024-12-24T20:08:18Z\",\"asset_code\":null,\"amount\":50}"
+ *                 last_nonxlm_transaction_details: "{\"id\":\"236086282018091008\",\"op_type_int\":1,\"op_type_str\":\"payment\",\"timestamp\":\"2024-12-24T11:01:59Z\",\"asset_code\":\"yUSDC\",\"amount\":0.02}"
+ *                 last_xlm_transaction_details: "{\"id\":\"236110153446641664\",\"op_type_int\":1,\"op_type_str\":\"payment\",\"timestamp\":\"2024-12-24T20:08:18Z\",\"asset_code\":null,\"amount\":50}"
+ *                 top_largest_nonxlm: "[{\"nonxlm_asset_code\":\"AQUA\",\"nonxlm_amount\":184000,\"nonxlm_op_type_int\":1,\"nonxlm_op_type_str\":\"payment\",\"tx_id\":\"223078118863888384\",\"tx_time\":\"2024-06-02T06:48:12Z\"}]"
+ *                 top_largest_xlm: "[{\"xlm_asset_code\":null,\"xlm_amount\":10000,\"xlm_op_type_int\":1,\"xlm_op_type_str\":\"payment\",\"tx_id\":\"221543926480769024\",\"tx_time\":\"2024-05-08T13:14:11Z\"}]"
+ *                 top_nonxlm_sent: "[{\"code\":\"AQUA\",\"total_sent\":2359777.01}]"
+ *                 top_nonxlm_received: "[]"
+ *                 top_nonxlm_selling: "[]"
+ *                 top_nonxlm_buying: "[{\"code\":\"EURC\",\"total_buying\":120}]"
+ *                 unique_wallet_interactions: 661
+ *                 top_interaction_wallet: "GANESLOXBZWPLB5ZM2KFUTBGSBGISB7JTWFXO67G4TGQINWRMI6766GV"
+ *                 top_interaction_count: 721
+ *                 most_active_day: "2024-09-29T00:00:00.000Z"
+ *                 most_active_day_count: 460
+ *                 most_active_month: "2024-09"
+ *                 most_active_month_count: 728
+ *                 top_5_transactions_by_category: "payment: 3349, create_account: 558, claim_claimable_balance: 12, manage_buy_offer: 3, change_trust: 2"
+ *                 token_balance: 21708.24
+ *                 starting_balance: 6552.26
+ *                 balance_diff: 15155.99
+ *                 createdAt: "2024-12-26T01:44:24.253Z"
+ *                 updatedAt: "2024-12-26T01:44:24.253Z"
  *       "400":
  *         $ref: '#/components/responses/BadRequest'
  *       "401":

@@ -1,132 +1,60 @@
+// src/models/walletSummary.model.js
 const mongoose = require('mongoose');
 const { toJSON } = require('./plugins');
 
 const walletSummarySchema = mongoose.Schema(
   {
-    account: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-    },
-    isMissing: {
-      type: Boolean,
-      default: false, // Defaults to false for actual wallets
-    },
-    total_transactions: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
-    total_sent_amount: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
-    total_received_amount: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
-    unique_wallet_transfers: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
-    most_active_day: {
-      type: Date,
-      default: null,
-    },
-    most_active_day_count: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
-    most_active_month: {
-      type: String, // e.g. '2024-12'
-      default: 'N/A',
-    },
-    monthly_transaction_count: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
-    top_interaction_wallet: {
-      type: String,
-      default: null,
-    },
-    total_interaction_count: {
-      type: Number,
-      default: 0,
-    },
-    top_5_transactions_by_category: {
-      type: String, // store as JSON string, e.g. '["payment","path_payment_strict_send"]'
-      default: '[]',
-    },
-    // -- PNL columns:
-    total_selling_amount: {
-      type: Number,
-      default: 0,
-    },
-    total_buying_amount: {
-      type: Number,
-      default: 0,
-    },
-    net_pnl: {
-      type: Number,
-      default: 0,
-    },
-    // -- “Token ownership” columns, if you want them individually
-    token_balance: {
-      type: Number,
-      default: 0,
-    },
-    // OR if you want “starting_balance” / “current_balance” / “balance_diff”:
-    starting_balance: {
-      type: Number,
-      default: 0,
-    },
-    // current_balance: {
-    //   type: Number,
-    //   default: 0,
-    // },
-    balance_diff: {
-      type: Number,
-      default: 0,
-    },
+    account: { type: String, required: true, unique: true, index: true },
+    isMissing: { type: Boolean, default: false },
 
-    // -- Transaction date range columns:
-    first_transaction_date: {
-      type: Date,
-      default: null,
-    },
-    last_transaction_date: {
-      type: Date,
-      default: null,
-    },
-    time_on_chain_days: {
-      type: Number,
-      // required: true,
-      default: 0,
-    },
+    // Transaction stats
+    total_transactions: { type: Number, default: 0 },
+    total_sent_xlm: { type: Number, default: 0 },
+    total_received_xlm: { type: Number, default: 0 },
+    total_selling_xlm: { type: Number, default: 0 },
+    total_buying_xlm: { type: Number, default: 0 },
+    net_pnl_xlm: { type: Number, default: 0 },
 
-    // -- Largest XLM transaction details as a JSON string
-    largest_xlm_transaction_details: {
-      type: String,
-      default: '{}', // empty JSON object by default
-    },
+    // Time stats
+    time_on_chain_days: { type: Number, default: 0 },
+    first_txn_time: { type: Date, default: null },
+    last_txn_time: { type: Date, default: null },
+
+    // Collapsed JSON fields for last transaction
+    last_transaction_details: { type: String, default: '{}' },
+    last_nonxlm_transaction_details: { type: String, default: '{}' },
+    last_xlm_transaction_details: { type: String, default: '{}' },
+
+    // top arrays => also strings
+    top_largest_nonxlm: { type: String, default: '[]' },
+    top_largest_xlm: { type: String, default: '[]' },
+    top_nonxlm_sent: { type: String, default: '[]' },
+    top_nonxlm_received: { type: String, default: '[]' },
+    top_nonxlm_selling: { type: String, default: '[]' },
+    top_nonxlm_buying: { type: String, default: '[]' },
+
+    // Interactions
+    unique_wallet_interactions: { type: Number, default: 0 },
+    top_interaction_wallet: { type: String, default: null },
+    top_interaction_count: { type: Number, default: 0 },
+
+    // Most active day/month
+    most_active_day: { type: Date, default: null },
+    most_active_day_count: { type: Number, default: 0 },
+    most_active_month: { type: String, default: '' },
+    most_active_month_count: { type: Number, default: 0 },
+    top_5_transactions_by_category: { type: String, default: '' },
+
+    // Balances
+    token_balance: { type: Number, default: 0 },
+    starting_balance: { type: Number, default: 0 },
+    balance_diff: { type: Number, default: 0 },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 // add plugin that converts mongoose documents to JSON
 walletSummarySchema.plugin(toJSON);
 
-/**
- * @typedef WalletSummary
- */
 const WalletSummary = mongoose.model('WalletSummary', walletSummarySchema);
-
 module.exports = WalletSummary;
